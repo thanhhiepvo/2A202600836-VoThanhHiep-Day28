@@ -1,5 +1,5 @@
 # docker-compose.yml
-version: "3.9"
+name: lab28
 
 services:
   # ── Kafka Stack ──────────────────────────────────────────
@@ -20,6 +20,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
   # ── Prefect ───────────────────────────────────────────────
   prefect-orion:
@@ -37,6 +38,8 @@ services:
       && prefect worker start -p lab28-worker -n lab28-worker"
     environment:
       PREFECT_API_URL: http://prefect-orion:4200/api
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DELTA_LAKE_PATH: /opt/delta-lake/raw
     volumes:
       - ./prefect/flows:/opt/prefect/flows
       - ./delta-lake:/opt/delta-lake
@@ -72,16 +75,25 @@ services:
       - "3000:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
 
   # ── API Gateway ───────────────────────────────────────────
   api-gateway:
     build: ./api-gateway
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      VLLM_URL: ${VLLM_NGROK_URL}
+      VLLM_URL: ${VLLM_NGROK_URL:-}
+      VLLM_MODEL: ${VLLM_MODEL:-Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4}
       QDRANT_URL: http://qdrant:6333
       REDIS_URL: redis://redis:6379
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT:-lab28-platform}
+      MOCK_VLLM: ${MOCK_VLLM:-0}
     depends_on: [qdrant, redis]
 
 volumes:

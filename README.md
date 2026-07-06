@@ -29,7 +29,29 @@ Kaggle (GPU T4/P100):
   - `ngrok` đã cài và token configured
   - HOẶC `cloudflared` đã cài (`brew install cloudflare/cloudflare/cloudflared`)
 
-## Quick Start
+## Quick Start (end-to-end)
+
+```bash
+# 1. Setup Kaggle GPU first — see kaggle/KAGGLE_SETUP.md
+#    Copy VLLM_NGROK_URL and EMBED_NGROK_URL into .env
+
+cp .env.example .env   # then edit .env
+
+# 2. One-command local setup
+bash scripts/setup.sh
+
+# 3. After Kaggle tunnels are ready, rebuild API Gateway
+docker compose up -d --build api-gateway
+
+# 4. Verify
+pytest smoke-tests/ -v
+python scripts/production_readiness_check.py
+python scripts/09_verify_observability.py
+```
+
+**Capture screenshots:** `python scripts/capture_screenshots.py` → saves to `screenshots/`
+
+See [SUBMISSION_README.md](SUBMISSION_README.md) for the full submission checklist.
 
 ### 1. Khởi động Local Stack
 
